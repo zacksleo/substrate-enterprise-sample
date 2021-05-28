@@ -1,6 +1,6 @@
 [package]
 name = 'enterprise-sample'
-version = '2.0.0'
+version = '3.0.0'
 description = 'A supply chain platform for a decentralized consortium (sample project).'
 build = 'build.rs'
 edition = '2018'
@@ -51,3 +51,4 @@ sp-inherents = '3.0.0'
 sp-runtime = '3.0.0'
 sp-transaction-pool = '3.0.0'
 substrate-frame-rpc-system = '3.0.0'
+parity-util-mem = '0.9.0'

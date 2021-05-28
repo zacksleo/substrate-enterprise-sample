@@ -75,13 +75,13 @@ impl ProductProperty {
     }
 }
 
-pub trait Trait: system::Trait + timestamp::Trait {
-    type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
+pub trait Option: system::Option + timestamp::Option {
+    type Event: From<Event<Self>> + Into<<Self as system::Option>::Event>;
     type CreateRoleOrigin: EnsureOrigin<Self::Origin>;
 }
 
 decl_storage! {
-    trait Store for Module<T: Trait> as ProductRegistry {
+    trait Store for Module<T: Option> as ProductRegistry {
         pub Products get(fn product_by_id): map hasher(blake2_128_concat) ProductId => Option<Product<T::AccountId, T::Moment>>;
         pub ProductsOfOrganization get(fn products_of_org): map hasher(blake2_128_concat) T::AccountId => Vec<ProductId>;
         pub OwnerOf get(fn owner_of): map hasher(blake2_128_concat) ProductId => Option<T::AccountId>;
@@ -91,14 +91,14 @@ decl_storage! {
 decl_event!(
     pub enum Event<T>
     where
-        AccountId = <T as system::Trait>::AccountId,
+        AccountId = <T as system::Option>::AccountId,
     {
         ProductRegistered(AccountId, ProductId, AccountId),
     }
 );
 
 decl_error! {
-    pub enum Error for Module<T: Trait> {
+    pub enum Error for Module<T: Option> {
         ProductIdMissing,
         ProductIdTooLong,
         ProductIdExists,
@@ -109,7 +109,7 @@ decl_error! {
 }
 
 decl_module! {
-    pub struct Module<T: Trait> for enum Call where origin: T::Origin {
+    pub struct Module<T: Option> for enum Call where origin: T::Origin {
         type Error = Error<T>;
         fn deposit_event() = default;
 
@@ -151,7 +151,7 @@ decl_module! {
     }
 }
 
-impl<T: Trait> Module<T> {
+impl<T: Option> Module<T> {
     // Helper methods
     fn new_product() -> ProductBuilder<T::AccountId, T::Moment> {
         ProductBuilder::<T::AccountId, T::Moment>::default()
