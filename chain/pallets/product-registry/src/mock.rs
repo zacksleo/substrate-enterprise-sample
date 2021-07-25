@@ -1,91 +1,80 @@
 // Creating mock runtime here
 
-use crate::{Module, Trait};
+use crate as product_registry;
+use crate::{Module, Config};
 use core::marker::PhantomData;
-use frame_support::{
-    impl_outer_event, impl_outer_origin, parameter_types, traits::EnsureOrigin, weights::Weight,
-};
+use frame_support::{parameter_types, traits::EnsureOrigin};
 use frame_system as system;
 use frame_system::RawOrigin;
 use sp_core::{sr25519, Pair, H256};
 use sp_runtime::{
     testing::Header,
     traits::{BlakeTwo256, IdentityLookup},
-    Perbill,
 };
 
-use crate as product_registry;
+type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
+type Block = frame_system::mocking::MockBlock<Test>;
 
-impl_outer_origin! {
-    pub enum Origin for Test {}
-}
+// Configure a mock runtime to test the pallet.
+frame_support::construct_runtime!(
+	pub enum Test where
+		Block = Block,
+		NodeBlock = Block,
+		UncheckedExtrinsic = UncheckedExtrinsic,
+	{
+		System: frame_system::{Module, Call, Config, Storage, Event<T>},
+		ProductRgistry: product_registry::{Module, Call, Storage, Event<T>},
+	}
+);
 
-impl_outer_event! {
-    pub enum TestEvent for Test {
-        system<T>,
-        product_registry<T>,
-    }
-}
-
-// For testing the pallet, we construct most of a mock runtime. This means
-// first constructing a configuration type (`Test`) which `impl`s each of the
-// configuration traits of pallets we want to use.
-#[derive(Clone, Eq, PartialEq)]
-pub struct Test;
 parameter_types! {
     pub const BlockHashCount: u64 = 250;
-    pub const MaximumBlockWeight: Weight = 1024;
-    pub const MaximumBlockLength: u32 = 2 * 1024;
-    pub const AvailableBlockRatio: Perbill = Perbill::from_percent(75);
+	pub const SS58Prefix: u8 = 42;
 }
 
-impl system::Trait for Test {
-    type BaseCallFilter = ();
-    type Origin = Origin;
-    type Call = ();
-    type Index = u64;
-    type BlockNumber = u64;
-    type Hash = H256;
-    type Hashing = BlakeTwo256;
-    type AccountId = sr25519::Public;
-    type Lookup = IdentityLookup<Self::AccountId>;
-    type Header = Header;
-    type Event = TestEvent;
-    type BlockHashCount = BlockHashCount;
-    type MaximumBlockWeight = MaximumBlockWeight;
-    type DbWeight = ();
-    type BlockExecutionWeight = ();
-    type ExtrinsicBaseWeight = ();
-    type MaximumExtrinsicWeight = MaximumBlockWeight;
-    type MaximumBlockLength = MaximumBlockLength;
-    type AvailableBlockRatio = AvailableBlockRatio;
-    type Version = ();
-    type PalletInfo = ();
-    type AccountData = ();
-    type OnNewAccount = ();
-    type OnKilledAccount = ();
-    type SystemWeightInfo = ();
+impl system::Config for Test {
+	type BaseCallFilter = ();
+	type BlockWeights = ();
+	type BlockLength = ();
+	type DbWeight = ();
+	type Origin = Origin;
+	type Call = Call;
+	type Index = u64;
+	type BlockNumber = u64;
+	type Hash = H256;
+	type Hashing = BlakeTwo256;
+	type AccountId = sr25519::Public;
+	type Lookup = IdentityLookup<Self::AccountId>;
+	type Header = Header;
+	type Event = Event;
+	type BlockHashCount = BlockHashCount;
+	type Version = ();
+	type PalletInfo = PalletInfo;
+	type AccountData = ();
+	type OnNewAccount = ();
+	type OnKilledAccount = ();
+	type SystemWeightInfo = ();
+	type SS58Prefix = SS58Prefix;
 }
 
-impl timestamp::Trait for Test {
+impl timestamp::Config for Test {
     type Moment = u64;
     type OnTimestampSet = ();
     type MinimumPeriod = ();
     type WeightInfo = ();
 }
 
-impl Trait for Test {
-    type Event = TestEvent;
+impl Config for Test {
+    type Event = Event;
     type CreateRoleOrigin = MockOrigin<Test>;
 }
 
 pub type ProductRegistry = Module<Test>;
-pub type System = system::Module<Test>;
 pub type Timestamp = timestamp::Module<Test>;
 
 pub struct MockOrigin<T>(PhantomData<T>);
 
-impl<T: Trait> EnsureOrigin<T::Origin> for MockOrigin<T> {
+impl<T: Config> EnsureOrigin<T::Origin> for MockOrigin<T> {
     type Success = T::AccountId;
     fn try_origin(o: T::Origin) -> Result<Self::Success, T::Origin> {
         o.into().and_then(|o| match o {

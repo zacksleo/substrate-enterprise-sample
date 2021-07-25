@@ -6,17 +6,18 @@ use frame_support::{
 	ensure, dispatch,
 	traits::EnsureOrigin
 };
-use frame_system::{self as system, ensure_signed, RawOrigin};
+use frame_system::pallet_prelude::*;
+use frame_system::RawOrigin;
 
 /// Configure the pallet by specifying the parameters and types on which it depends.
-pub trait Trait: system::Trait + did::Trait {
+pub trait Config: frame_system::Config + did::Config {
 	/// Because this pallet emits events, it depends on the runtime's definition of an event.
-	type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
+	type Event: From<Event<Self>> + Into<<Self as frame_system::Config>::Event>;
 }
 
 // Errors inform users why an extrinsic failed.
 decl_error! {
-	pub enum Error for Module<T: Trait> {
+	pub enum Error for Module<T: Config> {
 		/// Cannot create the organization because it already exists.
 		OrganizationExists,
 		/// Cannot add users to a non-existent organization.
@@ -29,7 +30,7 @@ decl_error! {
 // Pallets use events to inform users when important changes are made.
 // https://substrate.dev/docs/en/knowledgebase/runtime/events
 decl_event!(
-	pub enum Event<T> where AccountId = <T as system::Trait>::AccountId {
+	pub enum Event<T> where AccountId = <T as frame_system::Config>::AccountId {
 		/// An organization has been created. [creator, organization_id]
 		CreatedOrganization(AccountId, Vec<u8>),
 		/// An account was added to an organization. [account, organization_id]
@@ -40,7 +41,7 @@ decl_event!(
 // The pallet's runtime storage items.
 // https://substrate.dev/docs/en/knowledgebase/runtime/storage
 decl_storage! {
-	trait Store for Module<T: Trait> as registrar {
+	trait Store for Module<T: Config> as registrar {
 			/// The list of organizations in the supply chain consortium.
 			/// Organizations are identified by the ID of the account that created them.
 			pub Organizations get(fn organizations): Vec<T::AccountId>;
@@ -74,7 +75,7 @@ decl_storage! {
 // These functions materialize as "extrinsics", which are often compared to transactions.
 // Dispatchable functions must be annotated with a weight and must return a DispatchResult.
 decl_module! {
-	pub struct Module<T: Trait> for enum Call where origin: T::Origin {
+	pub struct Module<T: Config> for enum Call where origin: T::Origin {
 		fn deposit_event() = default;
 		type Error = Error<T>;
 
@@ -104,7 +105,7 @@ decl_module! {
 	}
 }
 
-impl<T: Trait> Module<T> {
+impl<T: Config> Module<T> {
 	pub fn create_org(owner: &T::AccountId, org_name: Vec<u8>) -> dispatch::DispatchResult {
 		let mut orgs = <Module<T>>::organizations();
 		ensure!(!orgs.contains(&owner), Error::<T>::OrganizationExists);
@@ -153,7 +154,7 @@ impl<T: Trait> Module<T> {
 /// Ensure that a consortium member is invoking a dispatch.
 // https://substrate.dev/rustdocs/v2.0.0-rc6/frame_support/traits/trait.EnsureOrigin.html
 pub struct EnsureOrg<T>(sp_std::marker::PhantomData<T>);
-impl<T: Trait> EnsureOrigin<T::Origin> for EnsureOrg<T> {
+impl<T: Config> EnsureOrigin<T::Origin> for EnsureOrg<T> {
 	type Success = T::AccountId;
 	fn try_origin(o: T::Origin) -> Result<Self::Success, T::Origin> {
 

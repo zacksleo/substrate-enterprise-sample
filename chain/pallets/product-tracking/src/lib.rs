@@ -14,15 +14,14 @@ use frame_support::{
     sp_std::prelude::*,
     traits::EnsureOrigin,
 };
-use frame_system::{self as system, ensure_signed, offchain::SendTransactionTypes};
-
+use frame_system::{pallet_prelude::*, offchain::SendTransactionTypes};
 use product_registry::ProductId;
 
-#[cfg(test)]
-mod mock;
+// #[cfg(test)]
+// mod mock;
 
-#[cfg(test)]
-mod tests;
+// #[cfg(test)]
+// mod tests;
 
 mod types;
 use crate::types::*;
@@ -37,13 +36,13 @@ pub const SHIPMENT_MAX_PRODUCTS: usize = 10;
 pub const LISTENER_ENDPOINT: &str = "http://localhost:3005";
 pub const LOCK_TIMEOUT_EXPIRATION: u64 = 3000; // in milli-seconds
 
-pub trait Trait: system::Trait + timestamp::Trait + SendTransactionTypes<Call<Self>> {
-    type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
+pub trait Config: frame_system::Config + timestamp::Config + SendTransactionTypes<Call<Self>> {
+    type Event: From<Event<Self>> + Into<<Self as frame_system::Config>::Event>;
     type CreateRoleOrigin: EnsureOrigin<Self::Origin>;
 }
 
 decl_storage! {
-    trait Store for Module<T: Trait> as ProductTracking {
+    trait Store for Module<T: Config> as ProductTracking {
         // Shipments
         pub Shipments get(fn shipment_by_id): map hasher(blake2_128_concat) ShipmentId => Option<Shipment<T::AccountId, T::Moment>>;
         pub ShipmentsOfOrganization get(fn shipments_of_org): map hasher(blake2_128_concat) T::AccountId => Vec<ShipmentId>;
@@ -61,7 +60,7 @@ decl_storage! {
 decl_event!(
     pub enum Event<T>
     where
-        AccountId = <T as system::Trait>::AccountId,
+        AccountId = <T as frame_system::Config>::AccountId,
     {
         ShipmentRegistered(AccountId, ShipmentId, AccountId),
         ShipmentStatusUpdated(AccountId, ShipmentId, ShippingEventIndex, ShipmentStatus),
@@ -69,7 +68,7 @@ decl_event!(
 );
 
 decl_error! {
-    pub enum Error for Module<T: Trait> {
+    pub enum Error for Module<T: Config> {
         InvalidOrMissingIdentifier,
         ShipmentAlreadyExists,
         ShipmentHasBeenDelivered,
@@ -83,7 +82,7 @@ decl_error! {
 }
 
 decl_module! {
-    pub struct Module<T: Trait> for enum Call where origin: T::Origin {
+    pub struct Module<T: Config> for enum Call where origin: T::Origin {
         type Error = Error<T>;
         fn deposit_event() = default;
 
@@ -127,7 +126,7 @@ decl_module! {
             // Store shipping event (1 DB read, 3 DB writes)
             let event_idx = Self::store_event(event)?;
             // Update offchain notifications (1 DB write)
-            <OcwNotifications<T>>::append(<system::Module<T>>::block_number(), event_idx);
+            <OcwNotifications<T>>::append(<frame_system::Module<T>>::block_number(), event_idx);
 
             // Raise events
             Self::deposit_event(RawEvent::ShipmentRegistered(who.clone(), id.clone(), owner));
@@ -184,7 +183,7 @@ decl_module! {
             // Store shipping event (1 DB read, 3 DB writes)
             let event_idx = Self::store_event(event)?;
             // Update offchain notifications (1 DB write)
-            <OcwNotifications<T>>::append(<system::Module<T>>::block_number(), event_idx);
+            <OcwNotifications<T>>::append(<frame_system::Module<T>>::block_number(), event_idx);
 
             if operation != ShippingOperation::Scan {
                 // Update shipment (1 DB write)
@@ -211,7 +210,7 @@ decl_module! {
     }
 }
 
-impl<T: Trait> Module<T> {
+impl<T: Config> Module<T> {
     // Helper methods
     fn new_shipment() -> ShipmentBuilder<T::AccountId, T::Moment> {
         ShipmentBuilder::<T::AccountId, T::Moment>::default()
