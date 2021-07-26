@@ -128,21 +128,29 @@ pub fn native_version() -> NativeVersion {
 }
 
 parameter_types! {
+    pub const Version: RuntimeVersion = VERSION;
     pub const BlockHashCount: BlockNumber = 2400;
     /// We allow for 2 seconds of compute with a 6 second average block time.
-    pub const MaximumBlockWeight: Weight = 2 * WEIGHT_PER_SECOND;
-    pub const AvailableBlockRatio: Perbill = Perbill::from_percent(75);
+    // pub const MaximumBlockWeight: Weight = 2 * WEIGHT_PER_SECOND;
+    // pub const AvailableBlockRatio: Perbill = Perbill::from_percent(75);
     /// Assume 10% of weight for average on_initialize calls.
-    pub MaximumExtrinsicWeight: Weight = AvailableBlockRatio::get()
-        .saturating_sub(Perbill::from_percent(10)) * MaximumBlockWeight::get();
-    pub const MaximumBlockLength: u32 = 5 * 1024 * 1024;
-    pub const Version: RuntimeVersion = VERSION;
+    // pub MaximumExtrinsicWeight: Weight = AvailableBlockRatio::get()
+        // .saturating_sub(Perbill::from_percent(10)) * MaximumBlockWeight::get();
+    // pub const MaximumBlockLength: u32 = 5 * 1024 * 1024;
+
+    pub BlockWeights: frame_system::limits::BlockWeights = frame_system::limits::BlockWeights
+    ::with_sensible_defaults(2 * WEIGHT_PER_SECOND, NORMAL_DISPATCH_RATIO);
+    pub BlockLength: frame_system::limits::BlockLength = frame_system::limits::BlockLength
+        ::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
+    pub const SS58Prefix: u8 = 42;
 }
 
 impl frame_system::Config for Runtime {
     type BaseCallFilter = ();
 	/// Block & extrinsics weights: base values and limits.
 	type BlockWeights = BlockWeights;
+	/// The maximum length of a block (in bytes).
+	type BlockLength = BlockLength;
     /// The identifier used to distinguish between accounts.
     type AccountId = AccountId;
     /// The aggregated dispatch type that is available for extrinsics.
@@ -197,6 +205,8 @@ impl frame_system::Config for Runtime {
     type AccountData = pallet_balances::AccountData<Balance>;
     /// Weight information for the extrinsics of this pallet.
     type SystemWeightInfo = ();
+	/// This is used as an identifier of the chain. 42 is the generic substrate prefix.
+	type SS58Prefix = SS58Prefix;
 }
 
 impl pallet_aura::Config for Runtime {
@@ -657,6 +667,12 @@ impl_runtime_apis! {
             len: u32,
         ) -> pallet_transaction_payment_rpc_runtime_api::RuntimeDispatchInfo<Balance> {
             TransactionPayment::query_info(uxt, len)
+		}
+        fn query_fee_details(
+            uxt: <Block as BlockT>::Extrinsic,
+            len: u32,
+        ) -> pallet_transaction_payment::FeeDetails<Balance> {
+            TransactionPayment::query_fee_details(uxt, len)
         }
     }
 }
