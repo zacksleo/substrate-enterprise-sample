@@ -139,8 +139,10 @@ parameter_types! {
     pub const Version: RuntimeVersion = VERSION;
 }
 
-impl frame_system::Trait for Runtime {
+impl frame_system::Config for Runtime {
     type BaseCallFilter = ();
+	/// Block & extrinsics weights: base values and limits.
+	type BlockWeights = BlockWeights;
     /// The identifier used to distinguish between accounts.
     type AccountId = AccountId;
     /// The aggregated dispatch type that is available for extrinsics.
@@ -164,23 +166,23 @@ impl frame_system::Trait for Runtime {
     /// Maximum number of block number to block hash mappings to keep (oldest pruned first).
     type BlockHashCount = BlockHashCount;
     /// Maximum weight of each block.
-    type MaximumBlockWeight = MaximumBlockWeight;
+    // type MaximumBlockWeight = MaximumBlockWeight;
     /// The weight of database operations that the runtime can invoke.
     type DbWeight = RocksDbWeight;
     /// The weight of the overhead invoked on the block import process, independent of the
     /// extrinsics included in that block.
-    type BlockExecutionWeight = BlockExecutionWeight;
+    // type BlockExecutionWeight = BlockExecutionWeight;
     /// The base weight of any extrinsic processed by the runtime, independent of the
     /// logic of that extrinsic. (Signature verification, nonce increment, fee, etc...)
-    type ExtrinsicBaseWeight = ExtrinsicBaseWeight;
+    // type ExtrinsicBaseWeight = ExtrinsicBaseWeight;
     /// The maximum weight that a single extrinsic of `Normal` dispatch class can have,
     /// idependent of the logic of that extrinsics. (Roughly max block weight - average on
     /// initialize cost).
-    type MaximumExtrinsicWeight = MaximumExtrinsicWeight;
+    // type MaximumExtrinsicWeight = MaximumExtrinsicWeight;
     /// Maximum size of all encoded transactions (in bytes) that are allowed in one block.
-    type MaximumBlockLength = MaximumBlockLength;
+    // type MaximumBlockLength = MaximumBlockLength;
     /// Portion of the block weight that is available to all normal transactions.
-    type AvailableBlockRatio = AvailableBlockRatio;
+    // type AvailableBlockRatio = AvailableBlockRatio;
     /// Version of the runtime.
     type Version = Version;
     /// Converts a module to the index of the module in `construct_runtime!`.
@@ -197,11 +199,11 @@ impl frame_system::Trait for Runtime {
     type SystemWeightInfo = ();
 }
 
-impl pallet_aura::Trait for Runtime {
+impl pallet_aura::Config for Runtime {
     type AuthorityId = AuraId;
 }
 
-impl pallet_grandpa::Trait for Runtime {
+impl pallet_grandpa::Config for Runtime {
     type Event = Event;
     type Call = Call;
 
@@ -224,7 +226,7 @@ parameter_types! {
     pub const MinimumPeriod: u64 = SLOT_DURATION / 2;
 }
 
-impl pallet_timestamp::Trait for Runtime {
+impl pallet_timestamp::Config for Runtime {
     /// A timestamp: milliseconds since the unix epoch.
     type Moment = u64;
     type OnTimestampSet = Aura;
@@ -237,7 +239,7 @@ parameter_types! {
     pub const MaxLocks: u32 = 50;
 }
 
-impl pallet_balances::Trait for Runtime {
+impl pallet_balances::Config for Runtime {
     type MaxLocks = MaxLocks;
     /// The type for recording an account's balance.
     type Balance = Balance;
@@ -253,12 +255,11 @@ parameter_types! {
     pub const TransactionByteFee: Balance = 1;
 }
 
-impl pallet_transaction_payment::Trait for Runtime {
-    type Currency = Balances;
-    type OnTransactionPayment = ();
-    type TransactionByteFee = TransactionByteFee;
-    type WeightToFee = IdentityFee<Balance>;
-    type FeeMultiplierUpdate = ();
+impl pallet_transaction_payment::Config for Runtime {
+	type OnChargeTransaction = CurrencyAdapter<Balances, ()>;
+	type TransactionByteFee = TransactionByteFee;
+	type WeightToFee = IdentityFee<Balance>;
+	type FeeMultiplierUpdate = ();
 }
 
 /// Converter for currencies to votes.
@@ -266,7 +267,7 @@ pub struct CurrencyToVoteHandler<R>(sp_std::marker::PhantomData<R>);
 
 impl<R> CurrencyToVoteHandler<R>
 where
-	R: pallet_balances::Trait,
+	R: pallet_balances::Config,
 	R::Balance: Into<u128>,
 {
 	fn factor() -> u128 {
@@ -277,7 +278,7 @@ where
 
 impl<R> Convert<u128, u64> for CurrencyToVoteHandler<R>
 where
-	R: pallet_balances::Trait,
+	R: pallet_balances::Config,
 	R::Balance: Into<u128>,
 {
 	fn convert(x: u128) -> u64 { (x / Self::factor()) as u64 }
@@ -285,7 +286,7 @@ where
 
 impl<R> Convert<u128, u128> for CurrencyToVoteHandler<R>
 where
-	R: pallet_balances::Trait,
+	R: pallet_balances::Config,
 	R::Balance: Into<u128>,
 {
 	fn convert(x: u128) -> u128 { x * Self::factor() }
@@ -300,16 +301,16 @@ parameter_types! {
 	pub const ElectionsPhragmenModuleId: LockIdentifier = *b"phrelect";
 }
 
-impl pallet_elections_phragmen::Trait for Runtime {
+impl pallet_elections_phragmen::Config for Runtime {
 	type Event = Event;
 	type Currency = Balances;
 	type ChangeMembers = Council;
 	type InitializeMembers = Council;
 	type CurrencyToVote = CurrencyToVoteHandler<Self>;
 	type CandidacyBond = CandidacyBond;
-	type VotingBond = VotingBond;
+	// type VotingBond = VotingBond;
 	type LoserCandidate = ();
-	type BadReport = ();
+	// type BadReport = ();
 	type KickedMember = ();
 	type DesiredMembers = DesiredMembers;
 	type DesiredRunnersUp = DesiredRunnersUp;
@@ -325,7 +326,7 @@ parameter_types! {
 }
 
 type CouncilCollective = pallet_collective::Instance1;
-impl pallet_collective::Trait<CouncilCollective> for Runtime {
+impl pallet_collective::Config<CouncilCollective> for Runtime {
 	type Origin = Origin;
 	type Proposal = Call;
 	type Event = Event;
@@ -340,7 +341,7 @@ parameter_types! {
 	pub const MaxScheduledPerBlock: u32 = 50;
 }
 
-impl pallet_scheduler::Trait for Runtime {
+impl pallet_scheduler::Config for Runtime {
 	type Event = Event;
 	type Origin = Origin;
 	type Call = Call;
@@ -363,7 +364,7 @@ parameter_types! {
 	pub const MaxVotes: u32 = 100;
 }
 
-impl pallet_democracy::Trait for Runtime {
+impl pallet_democracy::Config for Runtime {
 	type Proposal = Call;
 	type Event = Event;
 	type Currency = Balances;
@@ -418,48 +419,48 @@ impl pallet_democracy::Trait for Runtime {
 	type WeightInfo = ();
 }
 
-impl pallet_sudo::Trait for Runtime {
+impl pallet_sudo::Config for Runtime {
     type Event = Event;
     type Call = Call;
 }
 
-impl pallet_did::Trait for Runtime {
+impl pallet_did::Config for Runtime {
     type Event = Event;
     type Public = MultiSigner;
     type Signature = Signature;
 }
 
-impl registrar::Trait for Runtime {
+impl registrar::Config for Runtime {
     type Event = Event;
 }
 
-impl product_registry::Trait for Runtime {
-    type Event = Event;
-    type CreateRoleOrigin = registrar::EnsureOrg<Runtime>;
-}
-
-impl product_tracking::Trait for Runtime {
+impl product_registry::Config for Runtime {
     type Event = Event;
     type CreateRoleOrigin = registrar::EnsureOrg<Runtime>;
 }
 
-impl rbac::Trait for Runtime {
+impl product_tracking::Config for Runtime {
     type Event = Event;
     type CreateRoleOrigin = registrar::EnsureOrg<Runtime>;
 }
 
-impl validatorset::Trait for Runtime {
+impl rbac::Config for Runtime {
+    type Event = Event;
+    // type CreateRoleOrigin = registrar::EnsureOrg<Runtime>;
+}
+
+impl validatorset::Config for Runtime {
     type Event = Event;
 }
 
-impl pallet_session::Trait for Runtime {
+impl pallet_session::Config for Runtime {
     type SessionHandler = <opaque::SessionKeys as OpaqueKeys>::KeyTypeIdProviders;
     type ShouldEndSession = ValidatorSet;
     type SessionManager = ValidatorSet;
     type Event = Event;
     type Keys = opaque::SessionKeys;
     type NextSessionRotation = ValidatorSet;
-    type ValidatorId = <Self as frame_system::Trait>::AccountId;
+    type ValidatorId = <Self as frame_system::Config>::AccountId;
     type ValidatorIdOf = validatorset::ValidatorOf<Self>;
     type DisabledValidatorsThreshold = ();
     type WeightInfo = ();

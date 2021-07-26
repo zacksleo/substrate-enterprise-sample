@@ -1,5 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use did::did::Did;
 use sp_std::{prelude::*, vec::Vec, if_std};
 use frame_support::{
 	decl_module, decl_event, decl_storage, decl_error,
@@ -54,7 +55,7 @@ decl_storage! {
 		build(|config| {
 			for org in config.orgs.iter() {
 				match Module::<T>::create_org(&org.0, org.1.clone()) {
-					Err(e) => panic!(e),
+					Err(e) => panic!("{:?}",e),
 					Ok(_) => (),
 				}
 			}
@@ -62,7 +63,7 @@ decl_storage! {
 			for (org, members) in config.members.iter() {
 				for member in members.iter() {
 					match Module::<T>::add_to_org(org, member) {
-						Err(e) => panic!(e),
+						Err(e) => panic!("{:?}",e),
 						Ok(_) => (),
 					}
 				}

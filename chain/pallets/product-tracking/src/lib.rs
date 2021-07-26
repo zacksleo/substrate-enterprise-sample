@@ -275,7 +275,8 @@ impl<T: Config> Module<T> {
                 return;
             }
             Some(Some(last_proccessed_block)) => {
-                last_proccessed_block.try_into().ok().unwrap() as u32
+                let t: Option<u32> = last_proccessed_block.try_into().ok();
+                t.unwrap() as u32
             }
             None => 0u32, //TODO: define a OCW_MAX_BACKTRACK_PERIOD param
             _ => {
@@ -285,7 +286,8 @@ impl<T: Config> Module<T> {
         };
 
         let start_block = last_processed_block + 1;
-        let end_block = block_number.try_into().ok().unwrap() as u32;
+        let t: Option<u32> = block_number.try_into().ok();
+        let end_block = t.unwrap();
         for current_block in start_block..end_block {
             debug::debug!(
                 "[product_tracking_ocw] Processing notifications for block {}",
